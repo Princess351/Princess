@@ -1,9 +1,8 @@
-
-
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3, secrets, hashlib, binascii
+import secrets, hashlib, binascii
 from datetime import datetime
+import mysql.connector
 
 # ---------- Security ----------
 PBKDF2_ITER = 150_000
@@ -26,42 +25,65 @@ def h2b(h): return binascii.unhexlify(h.encode())
 # ---------- Database ----------
 class DB:
     def __init__(self):
-        self.conn = sqlite3.connect("users.db")
+        # First, connect without specifying the database to check/create it
+        temp_conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="suman"
+        )
+        temp_cursor = temp_conn.cursor()
+        
+        # Check if the database exists
+        temp_cursor.execute("SHOW DATABASES LIKE 'retail_db'")
+        if not temp_cursor.fetchone():
+            # Create the database if it doesn't exist
+            temp_cursor.execute("CREATE DATABASE retail_db")
+            print("Database 'retail_db' created successfully.")
+        
+        temp_conn.close()
+        
+        # Now connect to the database
+        self.conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="suman",
+            database="retail_db"
+        )
+        self.cursor = self.conn.cursor()
         self.create_tables()
         self.ensure_admin()
         self.add_sample_products()
-
     def create_tables(self):
         # Users table
-        self.conn.execute("""
+        self.cursor.execute("""
         CREATE TABLE IF NOT EXISTS users(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            full_name TEXT, email TEXT UNIQUE, username TEXT UNIQUE,
-            salt TEXT, pwd_hash TEXT,
-            role TEXT, requested_role TEXT,
-            status TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            full_name VARCHAR(255), email VARCHAR(255) UNIQUE, username VARCHAR(255) UNIQUE,
+            salt VARCHAR(128), pwd_hash VARCHAR(128),
+            role VARCHAR(50), requested_role VARCHAR(50),
+            status VARCHAR(50), created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )""")
         
         # Products table
-        self.conn.execute("""
+        self.cursor.execute("""
         CREATE TABLE IF NOT EXISTS products(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            name VARCHAR(255) NOT NULL,
             description TEXT,
-            price REAL NOT NULL,
-            stock INTEGER DEFAULT 0,
-            category TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            price FLOAT NOT NULL,
+            stock INT DEFAULT 0,
+            category VARCHAR(100),
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )""")
         
         # Cart table
-        self.conn.execute("""
+        self.cursor.execute("""
         CREATE TABLE IF NOT EXISTS cart(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            product_id INTEGER,
-            quantity INTEGER DEFAULT 1,
-            added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            user_id INT,
+            product_id INT,
+            quantity INT DEFAULT 1,
+            added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(user_id) REFERENCES users(id),
             FOREIGN KEY(product_id) REFERENCES products(id)
         )""")
@@ -69,19 +91,17 @@ class DB:
         self.conn.commit()
 
     def ensure_admin(self):
-        c = self.conn.cursor()
-        c.execute("SELECT * FROM users WHERE username='admin'")
-        if not c.fetchone():
+        self.cursor.execute("SELECT * FROM users WHERE username=%s", ("admin",))
+        if not self.cursor.fetchone():
             salt, h = hash_password("Admin@123")
-            c.execute("""INSERT INTO users(full_name,email,username,salt,pwd_hash,role,requested_role,status)
-                         VALUES(?,?,?,?,?,?,?,?)""",
+            self.cursor.execute("""INSERT INTO users(full_name,email,username,salt,pwd_hash,role,requested_role,status)
+                         VALUES(%s,%s,%s,%s,%s,%s,%s,%s)""",
                       ("Default Administrator","admin@example.com","admin",b2h(salt),b2h(h),"admin","admin","active"))
             self.conn.commit()
 
     def add_sample_products(self):
-        c = self.conn.cursor()
-        c.execute("SELECT COUNT(*) FROM products")
-        if c.fetchone()[0] == 0:
+        self.cursor.execute("SELECT COUNT(*) FROM products")
+        if self.cursor.fetchone()[0] == 0:
             products = [
                 ("Laptop", "High-performance laptop for work and gaming", 999.99, 15, "Electronics"),
                 ("Wireless Mouse", "Ergonomic wireless mouse", 29.99, 50, "Electronics"),
@@ -92,7 +112,7 @@ class DB:
                 ("Water Bottle", "Insulated stainless steel water bottle", 19.99, 60, "Accessories"),
                 ("Backpack", "Laptop backpack with USB charging port", 49.99, 40, "Accessories"),
             ]
-            c.executemany("INSERT INTO products(name,description,price,stock,category) VALUES(?,?,?,?,?)", products)
+            self.cursor.executemany("INSERT INTO products(name,description,price,stock,category) VALUES(%s,%s,%s,%s,%s)", products)
             self.conn.commit()
 
     def add_user(self, name, email, username, password, requested_role):
@@ -106,18 +126,17 @@ class DB:
                 role = "unassigned"
                 status = "pending"
             
-            self.conn.execute("""INSERT INTO users(full_name,email,username,salt,pwd_hash,role,requested_role,status)
-                                 VALUES(?,?,?,?,?,?,?,?)""",
+            self.cursor.execute("""INSERT INTO users(full_name,email,username,salt,pwd_hash,role,requested_role,status)
+                                 VALUES(%s,%s,%s,%s,%s,%s,%s,%s)""",
                               (name,email,username,b2h(salt),b2h(h),role,requested_role,status))
             self.conn.commit()
             return True
-        except sqlite3.IntegrityError:
+        except mysql.connector.IntegrityError:
             return False
 
     def auth(self, username, pwd):
-        cur = self.conn.cursor()
-        cur.execute("SELECT * FROM users WHERE username=?", (username,))
-        u = cur.fetchone()
+        self.cursor.execute("SELECT * FROM users WHERE username=%s", (username,))
+        u = self.cursor.fetchone()
         if not u: return None
         if verify_password(pwd, h2b(u[4]), h2b(u[5])):
             return {
@@ -127,72 +146,79 @@ class DB:
         return None
 
     def list_pending(self):
-        return self.conn.execute("SELECT id,full_name,email,username,requested_role,created_at FROM users WHERE status='pending'").fetchall()
+        self.cursor.execute("SELECT id,full_name,email,username,requested_role,created_at FROM users WHERE status='pending'")
+        return self.cursor.fetchall()
 
     def list_all(self):
-        return self.conn.execute("SELECT id,full_name,email,username,role,requested_role,status,created_at FROM users WHERE role!='customer' ORDER BY created_at DESC").fetchall()
+        self.cursor.execute("SELECT id,full_name,email,username,role,requested_role,status,created_at FROM users WHERE role!='customer' ORDER BY created_at DESC")
+        return self.cursor.fetchall()
 
     def list_customers(self):
-        return self.conn.execute("SELECT id,full_name,email,username,created_at FROM users WHERE role='customer' ORDER BY created_at DESC").fetchall()
+        self.cursor.execute("SELECT id,full_name,email,username,created_at FROM users WHERE role='customer' ORDER BY created_at DESC")
+        return self.cursor.fetchall()
 
     def update_role(self, uid, new_role, status="active"):
-        self.conn.execute("UPDATE users SET role=?,status=? WHERE id=?", (new_role,status,uid))
+        self.cursor.execute("UPDATE users SET role=%s,status=%s WHERE id=%s", (new_role,status,uid))
         self.conn.commit()
 
     def reject_user(self, uid):
-        self.conn.execute("UPDATE users SET status='rejected' WHERE id=?", (uid,))
+        self.cursor.execute("UPDATE users SET status='rejected' WHERE id=%s", (uid,))
         self.conn.commit()
 
     def delete_user(self, uid):
-        self.conn.execute("DELETE FROM users WHERE id=?", (uid,))
+        self.cursor.execute("DELETE FROM users WHERE id=%s", (uid,))
         self.conn.commit()
 
     def get_by_id(self, uid):
-        return self.conn.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
+        self.cursor.execute("SELECT * FROM users WHERE id=%s", (uid,))
+        return self.cursor.fetchone()
 
     def change_password(self, uid, new_password):
         salt, h = hash_password(new_password)
-        self.conn.execute("UPDATE users SET salt=?, pwd_hash=? WHERE id=?", (b2h(salt), b2h(h), uid))
+        self.cursor.execute("UPDATE users SET salt=%s, pwd_hash=%s WHERE id=%s", (b2h(salt), b2h(h), uid))
         self.conn.commit()
 
     # Product methods
     def get_all_products(self):
-        return self.conn.execute("SELECT * FROM products ORDER BY category, name").fetchall()
+        self.cursor.execute("SELECT * FROM products ORDER BY category, name")
+        return self.cursor.fetchall()
 
     def get_products_by_category(self, category):
-        return self.conn.execute("SELECT * FROM products WHERE category=? ORDER BY name", (category,)).fetchall()
+        self.cursor.execute("SELECT * FROM products WHERE category=%s ORDER BY name", (category,))
+        return self.cursor.fetchall()
 
     def get_categories(self):
-        return [r[0] for r in self.conn.execute("SELECT DISTINCT category FROM products ORDER BY category").fetchall()]
+        self.cursor.execute("SELECT DISTINCT category FROM products ORDER BY category")
+        return [r[0] for r in self.cursor.fetchall()]
 
     # Cart methods
     def add_to_cart(self, user_id, product_id, quantity=1):
-        c = self.conn.cursor()
-        c.execute("SELECT * FROM cart WHERE user_id=? AND product_id=?", (user_id, product_id))
-        existing = c.fetchone()
+        self.cursor.execute("SELECT * FROM cart WHERE user_id=%s AND product_id=%s", (user_id, product_id))
+        existing = self.cursor.fetchone()
         
         if existing:
-            c.execute("UPDATE cart SET quantity=quantity+? WHERE user_id=? AND product_id=?", 
+            self.cursor.execute("UPDATE cart SET quantity=quantity+%s WHERE user_id=%s AND product_id=%s", 
                      (quantity, user_id, product_id))
         else:
-            c.execute("INSERT INTO cart(user_id,product_id,quantity) VALUES(?,?,?)", 
+            self.cursor.execute("INSERT INTO cart(user_id,product_id,quantity) VALUES(%s,%s,%s)", 
                      (user_id, product_id, quantity))
         self.conn.commit()
 
     def get_cart(self, user_id):
-        return self.conn.execute("""
+        self.cursor.execute("""
             SELECT c.id, p.name, p.price, c.quantity, (p.price * c.quantity) as total, p.id
             FROM cart c
             JOIN products p ON c.product_id = p.id
-            WHERE c.user_id=?
-        """, (user_id,)).fetchall()
+            WHERE c.user_id=%s
+        """, (user_id,))
+        return self.cursor.fetchall()
 
     def remove_from_cart(self, cart_id):
-        self.conn.execute("DELETE FROM cart WHERE id=?", (cart_id,))
+        self.cursor.execute("DELETE FROM cart WHERE id=%s", (cart_id,))
         self.conn.commit()
 
     def clear_cart(self, user_id):
-        self.conn.execute("DELETE FROM cart WHERE user_id=?", (user_id,))
+        self.cursor.execute("DELETE FROM cart WHERE user_id=%s", (user_id,))
         self.conn.commit()
 
 # ---------- Main App ----------
