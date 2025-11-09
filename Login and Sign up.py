@@ -1,3 +1,4 @@
+import customtkinter as ctk
 import tkinter as tk
 from tkinter import ttk, messagebox
 import secrets, hashlib, binascii
@@ -222,22 +223,24 @@ class DB:
         self.conn.commit()
 
 # ---------- Main App ----------
-class App(tk.Tk):
+class App(ctk.CTk):
     def __init__(self, db):
         super().__init__()
+        ctk.set_appearance_mode("System")
+        ctk.set_default_color_theme("blue")
         self.db = db
         self.title("Retail Management System")
         self.geometry("950x650")
         self.minsize(800, 550)
         self.resizable(True, True)
         self.current_user = None
-        
-        # Configure colors
-        self.bg_color = "#f0f0f0"
-        self.primary_color = "#2563eb"
-        self.configure(bg=self.bg_color)
+        self.configure(fg_color="#f0f0f0")
 
-        self.container = ttk.Frame(self)
+        style = ttk.Style()
+        style.configure("Treeview", font=("Arial", 12))
+        style.configure("Treeview.Heading", font=("Arial", 13, "bold"))
+
+        self.container = ctk.CTkFrame(self, fg_color="#f0f0f0")
         self.container.pack(fill="both", expand=True)
         self.container.grid_rowconfigure(0, weight=1)
         self.container.grid_columnconfigure(0, weight=1)
@@ -271,46 +274,41 @@ class App(tk.Tk):
         self.show("LoginPage")
 
 # ---------- Login Page ----------
-class LoginPage(ttk.Frame):
+class LoginPage(ctk.CTkFrame):
     def __init__(self, parent, app):
-        super().__init__(parent)
+        super().__init__(parent, fg_color="#f0f0f0")
         self.app = app
-        self.configure(style='Custom.TFrame')
-        
-        # Configure grid to center content
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
         
         # Main container
-        main_frame = ttk.Frame(self)
-        main_frame.grid(row=0, column=0)
+        main_frame = ctk.CTkFrame(self, corner_radius=10, fg_color="#e0e0e0")
+        main_frame.place(relx=0.5, rely=0.5, anchor="center")
         
         # Header
-        header = ttk.Frame(main_frame)
+        header = ctk.CTkFrame(main_frame, fg_color="transparent")
         header.pack(pady=(20, 30), fill="x")
         
-        ttk.Label(header, text="🔐", font=("Arial", 48)).pack()
-        ttk.Label(header, text="Retail Management System", 
+        ctk.CTkLabel(header, text="🔐", font=("Arial", 48)).pack()
+        ctk.CTkLabel(header, text="Retail Management System", 
                  font=("Arial", 24, "bold")).pack()
-        ttk.Label(header, text="Secure Login Portal", 
-                 font=("Arial", 12), foreground="gray").pack()
+        ctk.CTkLabel(header, text="Secure Login Portal", 
+                 font=("Arial", 12)).pack()
         
         # Login Form
-        form_frame = ttk.LabelFrame(main_frame, text=" Login Credentials ", padding=30)
+        form_frame = ctk.CTkFrame(main_frame, corner_radius=10, fg_color="transparent")
         form_frame.pack(pady=10, padx=40, fill="both")
         
         self.username = tk.StringVar()
         self.password = tk.StringVar()
         
         # Username
-        ttk.Label(form_frame, text="Username:", font=("Arial", 11)).grid(row=0, column=0, sticky="w", pady=(0,5))
-        username_entry = ttk.Entry(form_frame, textvariable=self.username, width=35, font=("Arial", 11))
+        ctk.CTkLabel(form_frame, text="Username:", font=("Arial", 12)).grid(row=0, column=0, sticky="w", pady=(0,5))
+        username_entry = ctk.CTkEntry(form_frame, textvariable=self.username, width=300, font=("Arial", 12), corner_radius=6)
         username_entry.grid(row=1, column=0, pady=(0,15))
         username_entry.focus()
         
         # Password
-        ttk.Label(form_frame, text="Password:", font=("Arial", 11)).grid(row=2, column=0, sticky="w", pady=(0,5))
-        password_entry = ttk.Entry(form_frame, textvariable=self.password, show="●", width=35, font=("Arial", 11))
+        ctk.CTkLabel(form_frame, text="Password:", font=("Arial", 12)).grid(row=2, column=0, sticky="w", pady=(0,5))
+        password_entry = ctk.CTkEntry(form_frame, textvariable=self.password, show="*", width=300, font=("Arial", 12), corner_radius=6)
         password_entry.grid(row=3, column=0, pady=(0,20))
         
         # Bind Enter key
@@ -318,17 +316,17 @@ class LoginPage(ttk.Frame):
         password_entry.bind('<Return>', lambda e: self.do_login())
         
         # Login Button
-        login_btn = ttk.Button(form_frame, text="Login", command=self.do_login, width=35)
+        login_btn = ctk.CTkButton(form_frame, text="Login", command=self.do_login, width=300, corner_radius=6)
         login_btn.grid(row=4, column=0, pady=(0,10))
         
         # Separator
         ttk.Separator(form_frame, orient="horizontal").grid(row=5, column=0, sticky="ew", pady=15)
         
         # Sign Up Button
-        signup_frame = ttk.Frame(form_frame)
+        signup_frame = ctk.CTkFrame(form_frame, fg_color="transparent")
         signup_frame.grid(row=6, column=0)
-        ttk.Label(signup_frame, text="Don't have an account?", font=("Arial", 10)).pack(side="left", padx=(0,5))
-        signup_btn = ttk.Button(signup_frame, text="Sign Up", command=lambda: app.show("Signup"))
+        ctk.CTkLabel(signup_frame, text="Don't have an account?", font=("Arial", 11)).pack(side="left", padx=(0,5))
+        signup_btn = ctk.CTkButton(signup_frame, text="Sign Up", command=lambda: app.show("Signup"), corner_radius=6)
         signup_btn.pack(side="left")
 
     def do_login(self):
@@ -355,25 +353,21 @@ class LoginPage(ttk.Frame):
         self.app.login_success(user)
 
 # ---------- Signup ----------
-class Signup(ttk.Frame):
+class Signup(ctk.CTkFrame):
     def __init__(self, parent, app):
-        super().__init__(parent)
+        super().__init__(parent, fg_color="#f0f0f0")
         self.app = app
         
-        # Configure grid to center content
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
-        
         # Main container
-        main_frame = ttk.Frame(self)
-        main_frame.grid(row=0, column=0)
+        main_frame = ctk.CTkFrame(self, corner_radius=10, fg_color="#e0e0e0")
+        main_frame.place(relx=0.5, rely=0.5, anchor="center")
         
         # Header
-        ttk.Label(main_frame, text="Create New Account", 
-                 font=("Arial", 20, "bold")).pack(pady=(20, 20))
+        ctk.CTkLabel(main_frame, text="Create New Account", 
+                 font=("Arial", 24, "bold")).pack(pady=(20, 20))
         
         # Form
-        form = ttk.LabelFrame(main_frame, text=" Registration Details ", padding=25)
+        form = ctk.CTkFrame(main_frame, corner_radius=10, fg_color="transparent")
         form.pack(padx=30)
         
         self.vars = {n: tk.StringVar() for n in ("name", "email", "username", "pwd", "conf", "req")}
@@ -387,27 +381,27 @@ class Signup(ttk.Frame):
         ]
         
         for i, (lbl, key) in enumerate(fields):
-            ttk.Label(form, text=lbl + ":", font=("Arial", 10)).grid(row=i, column=0, sticky="e", pady=8, padx=(0,10))
-            entry = ttk.Entry(form, textvariable=self.vars[key], width=30, 
-                            show="●" if key in ["pwd", "conf"] else "", font=("Arial", 10))
+            ctk.CTkLabel(form, text=lbl + ":", font=("Arial", 12)).grid(row=i, column=0, sticky="e", pady=8, padx=(0,10))
+            entry = ctk.CTkEntry(form, textvariable=self.vars[key], width=300, 
+                            show="*" if key in ["pwd", "conf"] else "", font=("Arial", 12), corner_radius=6)
             entry.grid(row=i, column=1, pady=8)
         
-        ttk.Label(form, text="Register As:", font=("Arial", 10)).grid(row=5, column=0, sticky="e", pady=8, padx=(0,10))
-        cb = ttk.Combobox(form, textvariable=self.vars["req"], 
-                         values=["customer", "staff", "supervisor"], state="readonly", width=28, font=("Arial", 10))
+        ctk.CTkLabel(form, text="Register As:", font=("Arial", 12)).grid(row=5, column=0, sticky="e", pady=8, padx=(0,10))
+        cb = ctk.CTkComboBox(form, variable=self.vars["req"], 
+                         values=["customer", "staff", "supervisor"], width=300, font=("Arial", 12))
         cb.grid(row=5, column=1, pady=8)
         self.vars["req"].set("customer")
         
         # Info label
-        self.info_label = ttk.Label(form, text="Note: Customer accounts are activated immediately.\nStaff accounts require admin approval.", 
-                                   font=("Arial", 9), foreground="gray", justify="center")
+        self.info_label = ctk.CTkLabel(form, text="Note: Customer accounts are activated immediately.\nStaff accounts require admin approval.", 
+                                   font=("Arial", 10), justify="center")
         self.info_label.grid(row=6, column=0, columnspan=2, pady=10)
         
         # Buttons
-        btn_frame = ttk.Frame(main_frame)
+        btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         btn_frame.pack(pady=20)
-        ttk.Button(btn_frame, text="Register", command=self.submit, width=15).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Back to Login", command=lambda: self.app.show("LoginPage"), width=15).pack(side="left", padx=5)
+        ctk.CTkButton(btn_frame, text="Register", command=self.submit, width=150, corner_radius=6).pack(side="left", padx=5)
+        ctk.CTkButton(btn_frame, text="Back to Login", command=lambda: self.app.show("LoginPage"), width=150, corner_radius=6).pack(side="left", padx=5)
 
     def submit(self):
         v = self.vars
@@ -436,41 +430,37 @@ class Signup(ttk.Frame):
             messagebox.showerror("Error", "Username or email already exists.")
 
 # ---------- Change Password ----------
-class ChangePassword(ttk.Frame):
+class ChangePassword(ctk.CTkFrame):
     def __init__(self, parent, app):
-        super().__init__(parent)
+        super().__init__(parent, fg_color="#f0f0f0")
         self.app = app
         
-        # Configure grid to center content
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
+        main_frame = ctk.CTkFrame(self, corner_radius=10, fg_color="#e0e0e0")
+        main_frame.place(relx=0.5, rely=0.5, anchor="center")
         
-        main_frame = ttk.Frame(self)
-        main_frame.grid(row=0, column=0)
+        ctk.CTkLabel(main_frame, text="Change Password", 
+                 font=("Arial", 24, "bold")).pack(pady=(20, 20))
         
-        ttk.Label(main_frame, text="Change Password", 
-                 font=("Arial", 18, "bold")).pack(pady=(20, 20))
-        
-        form = ttk.LabelFrame(main_frame, text=" Enter New Password ", padding=25)
+        form = ctk.CTkFrame(main_frame, corner_radius=10, fg_color="transparent")
         form.pack(padx=30)
         
         self.old_pwd = tk.StringVar()
         self.new_pwd = tk.StringVar()
         self.conf_pwd = tk.StringVar()
         
-        ttk.Label(form, text="Current Password:", font=("Arial", 10)).grid(row=0, column=0, sticky="e", pady=8, padx=(0,10))
-        ttk.Entry(form, textvariable=self.old_pwd, show="●", width=30, font=("Arial", 10)).grid(row=0, column=1, pady=8)
+        ctk.CTkLabel(form, text="Current Password:", font=("Arial", 12)).grid(row=0, column=0, sticky="e", pady=8, padx=(0,10))
+        ctk.CTkEntry(form, textvariable=self.old_pwd, show="*", width=300, font=("Arial", 12), corner_radius=6).grid(row=0, column=1, pady=8)
         
-        ttk.Label(form, text="New Password:", font=("Arial", 10)).grid(row=1, column=0, sticky="e", pady=8, padx=(0,10))
-        ttk.Entry(form, textvariable=self.new_pwd, show="●", width=30, font=("Arial", 10)).grid(row=1, column=1, pady=8)
+        ctk.CTkLabel(form, text="New Password:", font=("Arial", 12)).grid(row=1, column=0, sticky="e", pady=8, padx=(0,10))
+        ctk.CTkEntry(form, textvariable=self.new_pwd, show="*", width=300, font=("Arial", 12), corner_radius=6).grid(row=1, column=1, pady=8)
         
-        ttk.Label(form, text="Confirm New Password:", font=("Arial", 10)).grid(row=2, column=0, sticky="e", pady=8, padx=(0,10))
-        ttk.Entry(form, textvariable=self.conf_pwd, show="●", width=30, font=("Arial", 10)).grid(row=2, column=1, pady=8)
+        ctk.CTkLabel(form, text="Confirm New Password:", font=("Arial", 12)).grid(row=2, column=0, sticky="e", pady=8, padx=(0,10))
+        ctk.CTkEntry(form, textvariable=self.conf_pwd, show="*", width=300, font=("Arial", 12), corner_radius=6).grid(row=2, column=1, pady=8)
         
-        btn_frame = ttk.Frame(main_frame)
+        btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         btn_frame.pack(pady=20)
-        ttk.Button(btn_frame, text="Change Password", command=self.change_pwd, width=18).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.go_back, width=18).pack(side="left", padx=5)
+        ctk.CTkButton(btn_frame, text="Change Password", command=self.change_pwd, width=180, corner_radius=6).pack(side="left", padx=5)
+        ctk.CTkButton(btn_frame, text="Cancel", command=self.go_back, width=180, corner_radius=6).pack(side="left", padx=5)
 
     def change_pwd(self):
         user = self.app.current_user
@@ -513,22 +503,18 @@ class ChangePassword(ttk.Frame):
             self.app.show("StaffDashboard")
 
 # ---------- Register Customer (Staff Feature) ----------
-class RegisterCustomer(ttk.Frame):
+class RegisterCustomer(ctk.CTkFrame):
     def __init__(self, parent, app):
-        super().__init__(parent)
+        super().__init__(parent, fg_color="#f0f0f0")
         self.app = app
         
-        # Configure grid to center content
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
+        main_frame = ctk.CTkFrame(self, corner_radius=10, fg_color="#e0e0e0")
+        main_frame.place(relx=0.5, rely=0.5, anchor="center")
         
-        main_frame = ttk.Frame(self)
-        main_frame.grid(row=0, column=0)
+        ctk.CTkLabel(main_frame, text="Register New Customer", 
+                 font=("Arial", 24, "bold")).pack(pady=(20, 20))
         
-        ttk.Label(main_frame, text="Register New Customer", 
-                 font=("Arial", 18, "bold")).pack(pady=(20, 20))
-        
-        form = ttk.LabelFrame(main_frame, text=" Customer Details ", padding=25)
+        form = ctk.CTkFrame(main_frame, corner_radius=10, fg_color="transparent")
         form.pack(padx=30)
         
         self.vars = {n: tk.StringVar() for n in ("name", "email", "username", "pwd", "conf")}
@@ -542,15 +528,15 @@ class RegisterCustomer(ttk.Frame):
         ]
         
         for i, (lbl, key) in enumerate(fields):
-            ttk.Label(form, text=lbl + ":", font=("Arial", 10)).grid(row=i, column=0, sticky="e", pady=8, padx=(0,10))
-            entry = ttk.Entry(form, textvariable=self.vars[key], width=30, 
-                            show="●" if key in ["pwd", "conf"] else "", font=("Arial", 10))
+            ctk.CTkLabel(form, text=lbl + ":", font=("Arial", 12)).grid(row=i, column=0, sticky="e", pady=8, padx=(0,10))
+            entry = ctk.CTkEntry(form, textvariable=self.vars[key], width=300, 
+                            show="*" if key in ["pwd", "conf"] else "", font=("Arial", 12), corner_radius=6)
             entry.grid(row=i, column=1, pady=8)
         
-        btn_frame = ttk.Frame(main_frame)
+        btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         btn_frame.pack(pady=20)
-        ttk.Button(btn_frame, text="Register Customer", command=self.submit, width=18).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=lambda: self.app.show("StaffDashboard"), width=18).pack(side="left", padx=5)
+        ctk.CTkButton(btn_frame, text="Register Customer", command=self.submit, width=180, corner_radius=6).pack(side="left", padx=5)
+        ctk.CTkButton(btn_frame, text="Cancel", command=lambda: self.app.show("StaffDashboard"), width=180, corner_radius=6).pack(side="left", padx=5)
 
     def submit(self):
         v = self.vars
@@ -575,66 +561,64 @@ class RegisterCustomer(ttk.Frame):
             messagebox.showerror("Error", "Username or email already exists.")
 
 # ---------- Admin Dashboard ----------
-class AdminDashboard(ttk.Frame):
+class AdminDashboard(ctk.CTkFrame):
     def __init__(self, parent, app):
         super().__init__(parent)
         self.app = app
         self.uid = None
         
         # Header
-        header = ttk.Frame(self)
+        header = ctk.CTkFrame(self)
         header.pack(fill="x", padx=10, pady=10)
-        ttk.Label(header, text="Admin Dashboard", font=("Arial", 18, "bold")).pack(side="left")
+        ctk.CTkLabel(header, text="Admin Dashboard", font=("Arial", 24, "bold")).pack(side="left")
         
-        btn_frame = ttk.Frame(header)
+        btn_frame = ctk.CTkFrame(header)
         btn_frame.pack(side="right")
-        ttk.Button(btn_frame, text="Change Password", command=lambda: app.show("ChangePassword")).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="Logout", command=self.app.logout).pack(side="left", padx=2)
+        ctk.CTkButton(btn_frame, text="Change Password", command=lambda: app.show("ChangePassword"), corner_radius=6).pack(side="left", padx=2)
+        ctk.CTkButton(btn_frame, text="Logout", command=self.app.logout, corner_radius=6).pack(side="left", padx=2)
         
         # Notebook for tabs
-        notebook = ttk.Notebook(self)
+        notebook = ctk.CTkTabview(self)
         notebook.pack(fill="both", expand=True, padx=10, pady=5)
         
         # Tab 1: Pending Approvals
-        pending_tab = ttk.Frame(notebook)
-        notebook.add(pending_tab, text="Pending Approvals")
+        pending_tab = notebook.add("Pending Approvals")
         
-        ttk.Label(pending_tab, text="Users Awaiting Approval", font=("Arial", 12, "bold")).pack(pady=10)
+        ctk.CTkLabel(pending_tab, text="Users Awaiting Approval", font=("Arial", 14, "bold")).pack(pady=10)
         
-        list_frame = ttk.Frame(pending_tab)
+        list_frame = ctk.CTkFrame(pending_tab)
         list_frame.pack(fill="both", expand=True, padx=10)
         
-        self.pending_list = tk.Listbox(list_frame, width=50, height=8, font=("Arial", 10))
+        self.pending_list = tk.Listbox(list_frame, width=50, height=8, font=("Arial", 12))
         self.pending_list.pack(side="left", fill="both", expand=True)
         self.pending_list.bind("<<ListboxSelect>>", self.sel)
         
-        scrollbar = ttk.Scrollbar(list_frame, orient="vertical", command=self.pending_list.yview)
+        scrollbar = ctk.CTkScrollbar(list_frame, command=self.pending_list.yview)
         scrollbar.pack(side="right", fill="y")
         self.pending_list.config(yscrollcommand=scrollbar.set)
         
-        detail_frame = ttk.LabelFrame(pending_tab, text=" User Details ", padding=10)
+        detail_frame = ctk.CTkFrame(pending_tab)
         detail_frame.pack(fill="x", padx=10, pady=10)
         
-        self.detail = tk.Text(detail_frame, height=6, width=70, state="disabled", font=("Arial", 10))
+        self.detail = ctk.CTkTextbox(detail_frame, height=100, width=600, state="disabled", font=("Arial", 12))
         self.detail.pack()
         
-        action_frame = ttk.Frame(pending_tab)
+        action_frame = ctk.CTkFrame(pending_tab)
         action_frame.pack(pady=10)
         
-        ttk.Label(action_frame, text="Assign Role:", font=("Arial", 10)).pack(side="left", padx=5)
+        ctk.CTkLabel(action_frame, text="Assign Role:", font=("Arial", 12)).pack(side="left", padx=5)
         self.role = tk.StringVar(value="staff")
-        ttk.Combobox(action_frame, textvariable=self.role, values=["staff", "supervisor", "admin"], 
-                    state="readonly", width=15).pack(side="left", padx=5)
-        ttk.Button(action_frame, text="✓ Approve", command=self.approve).pack(side="left", padx=5)
-        ttk.Button(action_frame, text="✗ Reject", command=self.reject).pack(side="left", padx=5)
+        ctk.CTkComboBox(action_frame, variable=self.role, values=["staff", "supervisor", "admin"], 
+                    width=150).pack(side="left", padx=5)
+        ctk.CTkButton(action_frame, text="✓ Approve", command=self.approve, corner_radius=6).pack(side="left", padx=5)
+        ctk.CTkButton(action_frame, text="✗ Reject", command=self.reject, corner_radius=6).pack(side="left", padx=5)
         
         # Tab 2: All Users
-        users_tab = ttk.Frame(notebook)
-        notebook.add(users_tab, text="Staff & Supervisors")
+        users_tab = notebook.add("Staff & Supervisors")
         
-        ttk.Label(users_tab, text="Staff & Supervisor Management", font=("Arial", 12, "bold")).pack(pady=10)
+        ctk.CTkLabel(users_tab, text="Staff & Supervisor Management", font=("Arial", 14, "bold")).pack(pady=10)
         
-        tree_frame = ttk.Frame(users_tab)
+        tree_frame = ctk.CTkFrame(users_tab)
         tree_frame.pack(fill="both", expand=True, padx=10)
         
         self.tree = ttk.Treeview(tree_frame, columns=("ID", "Name", "Email", "User", "Role", "Status"), 
@@ -655,22 +639,21 @@ class AdminDashboard(ttk.Frame):
         
         self.tree.pack(side="left", fill="both", expand=True)
         
-        tree_scroll = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree.yview)
+        tree_scroll = ctk.CTkScrollbar(tree_frame, command=self.tree.yview)
         tree_scroll.pack(side="right", fill="y")
         self.tree.config(yscrollcommand=tree_scroll.set)
         
-        user_btn_frame = ttk.Frame(users_tab)
+        user_btn_frame = ctk.CTkFrame(users_tab)
         user_btn_frame.pack(pady=10)
-        ttk.Button(user_btn_frame, text="🗑 Delete Selected User", command=self.delete_user).pack(side="left", padx=5)
-        ttk.Button(user_btn_frame, text="🔄 Refresh", command=self.refresh).pack(side="left", padx=5)
+        ctk.CTkButton(user_btn_frame, text="🗑 Delete Selected User", command=self.delete_user, corner_radius=6).pack(side="left", padx=5)
+        ctk.CTkButton(user_btn_frame, text="🔄 Refresh", command=self.refresh, corner_radius=6).pack(side="left", padx=5)
         
         # Tab 3: Customers
-        customers_tab = ttk.Frame(notebook)
-        notebook.add(customers_tab, text="Customers")
+        customers_tab = notebook.add("Customers")
         
-        ttk.Label(customers_tab, text="Customer Management", font=("Arial", 12, "bold")).pack(pady=10)
+        ctk.CTkLabel(customers_tab, text="Customer Management", font=("Arial", 14, "bold")).pack(pady=10)
         
-        cust_tree_frame = ttk.Frame(customers_tab)
+        cust_tree_frame = ctk.CTkFrame(customers_tab)
         cust_tree_frame.pack(fill="both", expand=True, padx=10)
         
         self.cust_tree = ttk.Treeview(cust_tree_frame, columns=("ID", "Name", "Email", "Username", "Created"), 
@@ -689,14 +672,14 @@ class AdminDashboard(ttk.Frame):
         
         self.cust_tree.pack(side="left", fill="both", expand=True)
         
-        cust_scroll = ttk.Scrollbar(cust_tree_frame, orient="vertical", command=self.cust_tree.yview)
+        cust_scroll = ctk.CTkScrollbar(cust_tree_frame, command=self.cust_tree.yview)
         cust_scroll.pack(side="right", fill="y")
         self.cust_tree.config(yscrollcommand=cust_scroll.set)
         
-        cust_btn_frame = ttk.Frame(customers_tab)
+        cust_btn_frame = ctk.CTkFrame(customers_tab)
         cust_btn_frame.pack(pady=10)
-        ttk.Button(cust_btn_frame, text="🗑 Delete Selected Customer", command=self.delete_customer).pack(side="left", padx=5)
-        ttk.Button(cust_btn_frame, text="🔄 Refresh", command=self.refresh).pack(side="left", padx=5)
+        ctk.CTkButton(cust_btn_frame, text="🗑 Delete Selected Customer", command=self.delete_customer, corner_radius=6).pack(side="left", padx=5)
+        ctk.CTkButton(cust_btn_frame, text="🔄 Refresh", command=self.refresh, corner_radius=6).pack(side="left", padx=5)
 
     def refresh(self):
         # Refresh pending list
@@ -724,10 +707,10 @@ class AdminDashboard(ttk.Frame):
         u = self.app.db.get_by_id(self.uid)
         txt = (f"ID: {u[0]}\nName: {u[1]}\nEmail: {u[2]}\nUsername: {u[3]}\n"
                f"Requested Role: {u[7]}\nStatus: {u[8]}")
-        self.detail.config(state="normal")
+        self.detail.configure(state="normal")
         self.detail.delete("1.0", tk.END)
-        self.detail.insert(tk.END, txt)
-        self.detail.config(state="disabled")
+        self.detail.insert("end", txt)
+        self.detail.configure(state="disabled")
 
     def approve(self):
         if not self.uid:
@@ -788,61 +771,59 @@ class AdminDashboard(ttk.Frame):
             self.refresh()
 
 # ---------- Staff Dashboard ----------
-class StaffDashboard(ttk.Frame):
+class StaffDashboard(ctk.CTkFrame):
     def __init__(self, parent, app):
         super().__init__(parent)
         self.app = app
         
         # Header
-        header = ttk.Frame(self)
+        header = ctk.CTkFrame(self)
         header.pack(fill="x", padx=10, pady=10)
         
-        self.welcome = ttk.Label(header, text="", font=("Arial", 16, "bold"))
+        self.welcome = ctk.CTkLabel(header, text="", font=("Arial", 24, "bold"))
         self.welcome.pack(side="left")
         
-        btn_frame = ttk.Frame(header)
+        btn_frame = ctk.CTkFrame(header)
         btn_frame.pack(side="right")
-        ttk.Button(btn_frame, text="Change Password", command=lambda: app.show("ChangePassword")).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="Logout", command=self.app.logout).pack(side="left", padx=2)
+        ctk.CTkButton(btn_frame, text="Change Password", command=lambda: app.show("ChangePassword"), corner_radius=6).pack(side="left", padx=2)
+        ctk.CTkButton(btn_frame, text="Logout", command=self.app.logout, corner_radius=6).pack(side="left", padx=2)
         
         # Notebook
-        notebook = ttk.Notebook(self)
+        notebook = ctk.CTkTabview(self)
         notebook.pack(fill="both", expand=True, padx=10, pady=5)
         
         # Tab 1: My Account
-        account_tab = ttk.Frame(notebook)
-        notebook.add(account_tab, text="My Account")
+        account_tab = notebook.add("My Account")
         
         # User Info
-        info_frame = ttk.LabelFrame(account_tab, text=" My Account Information ", padding=15)
+        info_frame = ctk.CTkFrame(account_tab)
         info_frame.pack(fill="x", padx=10, pady=10)
         
-        self.info = ttk.Label(info_frame, text="", justify="left", font=("Arial", 11))
+        self.info = ctk.CTkLabel(info_frame, text="", justify="left", font=("Arial", 14))
         self.info.pack()
         
         # Tasks
-        task_frame = ttk.LabelFrame(account_tab, text=" My Tasks ", padding=15)
+        task_frame = ctk.CTkFrame(account_tab)
         task_frame.pack(fill="both", expand=True, padx=10, pady=10)
         
-        self.taskbox = tk.Listbox(task_frame, height=8, font=("Arial", 10))
+        self.taskbox = tk.Listbox(task_frame, height=8, font=("Arial", 12))
         self.taskbox.pack(fill="both", expand=True)
         
         # Actions
-        action_frame = ttk.Frame(account_tab)
+        action_frame = ctk.CTkFrame(account_tab)
         action_frame.pack(pady=10)
-        ttk.Button(action_frame, text="Request Role Change", command=self.request_role_change).pack()
+        ctk.CTkButton(action_frame, text="Request Role Change", command=self.request_role_change, corner_radius=6).pack()
         
         # Tab 2: Customer Management
-        customer_tab = ttk.Frame(notebook)
-        notebook.add(customer_tab, text="Customer Management")
+        customer_tab = notebook.add("Customer Management")
         
-        ttk.Label(customer_tab, text="Customer Management", font=("Arial", 12, "bold")).pack(pady=10)
+        ctk.CTkLabel(customer_tab, text="Customer Management", font=("Arial", 14, "bold")).pack(pady=10)
         
-        ttk.Button(customer_tab, text="➕ Register New Customer", 
-                  command=lambda: app.show("RegisterCustomer")).pack(pady=5)
+        ctk.CTkButton(customer_tab, text="➕ Register New Customer", 
+                  command=lambda: app.show("RegisterCustomer"), corner_radius=6).pack(pady=5)
         
         # Customer list
-        cust_frame = ttk.Frame(customer_tab)
+        cust_frame = ctk.CTkFrame(customer_tab)
         cust_frame.pack(fill="both", expand=True, padx=10, pady=10)
         
         self.cust_tree = ttk.Treeview(cust_frame, columns=("ID", "Name", "Email", "Username", "Created"), 
@@ -861,16 +842,16 @@ class StaffDashboard(ttk.Frame):
         
         self.cust_tree.pack(side="left", fill="both", expand=True)
         
-        cust_scroll = ttk.Scrollbar(cust_frame, orient="vertical", command=self.cust_tree.yview)
+        cust_scroll = ctk.CTkScrollbar(cust_frame, command=self.cust_tree.yview)
         cust_scroll.pack(side="right", fill="y")
         self.cust_tree.config(yscrollcommand=cust_scroll.set)
         
-        ttk.Button(customer_tab, text="🔄 Refresh", command=self.refresh).pack(pady=5)
+        ctk.CTkButton(customer_tab, text="🔄 Refresh", command=self.refresh, corner_radius=6).pack(pady=5)
 
     def refresh(self):
         u = self.app.current_user
-        self.welcome.config(text=f"Welcome, {u['full_name']}")
-        self.info.config(text=f"Username: {u['username']}\n"
+        self.welcome.configure(text=f"Welcome, {u['full_name']}")
+        self.info.configure(text=f"Username: {u['username']}\n"
                               f"Email: {u['email']}\n"
                               f"Role: {u['role'].title()}\n"
                               f"Status: {u['status'].title()}")
@@ -899,50 +880,49 @@ class StaffDashboard(ttk.Frame):
                           "Please contact your administrator for approval.")
 
 # ---------- Customer Dashboard ----------
-class CustomerDashboard(ttk.Frame):
+class CustomerDashboard(ctk.CTkFrame):
     def __init__(self, parent, app):
         super().__init__(parent)
         self.app = app
         self.selected_category = tk.StringVar(value="All")
         
         # Header
-        header = ttk.Frame(self)
+        header = ctk.CTkFrame(self)
         header.pack(fill="x", padx=10, pady=10)
         
-        self.welcome = ttk.Label(header, text="", font=("Arial", 16, "bold"))
+        self.welcome = ctk.CTkLabel(header, text="", font=("Arial", 24, "bold"))
         self.welcome.pack(side="left")
         
-        btn_frame = ttk.Frame(header)
+        btn_frame = ctk.CTkFrame(header)
         btn_frame.pack(side="right")
-        ttk.Button(btn_frame, text="Change Password", command=lambda: app.show("ChangePassword")).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="Logout", command=self.app.logout).pack(side="left", padx=2)
+        ctk.CTkButton(btn_frame, text="Change Password", command=lambda: app.show("ChangePassword"), corner_radius=6).pack(side="left", padx=2)
+        ctk.CTkButton(btn_frame, text="Logout", command=self.app.logout, corner_radius=6).pack(side="left", padx=2)
         
         # Notebook
-        notebook = ttk.Notebook(self)
+        notebook = ctk.CTkTabview(self)
         notebook.pack(fill="both", expand=True, padx=10, pady=5)
         
         # Tab 1: Browse Products
-        browse_tab = ttk.Frame(notebook)
-        notebook.add(browse_tab, text="Browse Products")
+        browse_tab = notebook.add("Browse Products")
         
         # Filter frame
-        filter_frame = ttk.Frame(browse_tab)
+        filter_frame = ctk.CTkFrame(browse_tab)
         filter_frame.pack(fill="x", padx=10, pady=10)
         
-        ttk.Label(filter_frame, text="Category:", font=("Arial", 11)).pack(side="left", padx=5)
-        self.category_combo = ttk.Combobox(filter_frame, textvariable=self.selected_category, 
-                                          state="readonly", width=20)
+        ctk.CTkLabel(filter_frame, text="Category:", font=("Arial", 13)).pack(side="left", padx=5)
+        self.category_combo = ctk.CTkComboBox(filter_frame, variable=self.selected_category, 
+                                          width=200)
         self.category_combo.pack(side="left", padx=5)
         self.category_combo.bind("<<ComboboxSelected>>", lambda e: self.filter_products())
         
-        ttk.Button(filter_frame, text="🔄 Refresh", command=self.refresh).pack(side="left", padx=5)
+        ctk.CTkButton(filter_frame, text="🔄 Refresh", command=self.refresh, corner_radius=6).pack(side="left", padx=5)
         
         # Products frame
-        prod_frame = ttk.LabelFrame(browse_tab, text=" Available Products ", padding=10)
+        prod_frame = ctk.CTkFrame(browse_tab)
         prod_frame.pack(fill="both", expand=True, padx=10, pady=5)
         
         # Products treeview
-        tree_frame = ttk.Frame(prod_frame)
+        tree_frame = ctk.CTkFrame(prod_frame)
         tree_frame.pack(fill="both", expand=True)
         
         self.prod_tree = ttk.Treeview(tree_frame, columns=("ID", "Name", "Description", "Price", "Stock", "Category"), 
@@ -963,27 +943,27 @@ class CustomerDashboard(ttk.Frame):
         
         self.prod_tree.pack(side="left", fill="both", expand=True)
         
-        prod_scroll = ttk.Scrollbar(tree_frame, orient="vertical", command=self.prod_tree.yview)
+        prod_scroll = ctk.CTkScrollbar(tree_frame, command=self.prod_tree.yview)
         prod_scroll.pack(side="right", fill="y")
         self.prod_tree.config(yscrollcommand=prod_scroll.set)
         
         # Add to cart section
-        cart_action_frame = ttk.Frame(prod_frame)
+        cart_action_frame = ctk.CTkFrame(prod_frame)
         cart_action_frame.pack(fill="x", pady=10)
         
-        ttk.Label(cart_action_frame, text="Quantity:", font=("Arial", 10)).pack(side="left", padx=5)
+        ctk.CTkLabel(cart_action_frame, text="Quantity:", font=("Arial", 12)).pack(side="left", padx=5)
         self.quantity = tk.StringVar(value="1")
-        ttk.Spinbox(cart_action_frame, from_=1, to=99, textvariable=self.quantity, width=10).pack(side="left", padx=5)
-        ttk.Button(cart_action_frame, text="🛒 Add to Cart", command=self.add_to_cart).pack(side="left", padx=5)
+        qty_values = [str(i) for i in range(1, 100)]
+        ctk.CTkComboBox(cart_action_frame, values=qty_values, variable=self.quantity, width=100).pack(side="left", padx=5)
+        ctk.CTkButton(cart_action_frame, text="🛒 Add to Cart", command=self.add_to_cart, corner_radius=6).pack(side="left", padx=5)
         
         # Tab 2: My Cart
-        cart_tab = ttk.Frame(notebook)
-        notebook.add(cart_tab, text="My Cart")
+        cart_tab = notebook.add("My Cart")
         
-        ttk.Label(cart_tab, text="Shopping Cart", font=("Arial", 12, "bold")).pack(pady=10)
+        ctk.CTkLabel(cart_tab, text="Shopping Cart", font=("Arial", 14, "bold")).pack(pady=10)
         
         # Cart treeview
-        cart_frame = ttk.Frame(cart_tab)
+        cart_frame = ctk.CTkFrame(cart_tab)
         cart_frame.pack(fill="both", expand=True, padx=10, pady=5)
         
         self.cart_tree = ttk.Treeview(cart_frame, columns=("ID", "Product", "Price", "Qty", "Total"), 
@@ -1002,28 +982,28 @@ class CustomerDashboard(ttk.Frame):
         
         self.cart_tree.pack(side="left", fill="both", expand=True)
         
-        cart_scroll = ttk.Scrollbar(cart_frame, orient="vertical", command=self.cart_tree.yview)
+        cart_scroll = ctk.CTkScrollbar(cart_frame, command=self.cart_tree.yview)
         cart_scroll.pack(side="right", fill="y")
         self.cart_tree.config(yscrollcommand=cart_scroll.set)
         
         # Cart total
-        self.cart_total_label = ttk.Label(cart_tab, text="Cart Total: $0.00", font=("Arial", 14, "bold"))
+        self.cart_total_label = ctk.CTkLabel(cart_tab, text="Cart Total: $0.00", font=("Arial", 16, "bold"))
         self.cart_total_label.pack(pady=10)
         
         # Cart actions
-        cart_btn_frame = ttk.Frame(cart_tab)
+        cart_btn_frame = ctk.CTkFrame(cart_tab)
         cart_btn_frame.pack(pady=10)
-        ttk.Button(cart_btn_frame, text="🗑 Remove Selected", command=self.remove_from_cart).pack(side="left", padx=5)
-        ttk.Button(cart_btn_frame, text="🧹 Clear Cart", command=self.clear_cart).pack(side="left", padx=5)
-        ttk.Button(cart_btn_frame, text="💳 Checkout (Coming Soon)", state="disabled").pack(side="left", padx=5)
+        ctk.CTkButton(cart_btn_frame, text="🗑 Remove Selected", command=self.remove_from_cart, corner_radius=6).pack(side="left", padx=5)
+        ctk.CTkButton(cart_btn_frame, text="🧹 Clear Cart", command=self.clear_cart, corner_radius=6).pack(side="left", padx=5)
+        ctk.CTkButton(cart_btn_frame, text="💳 Checkout (Coming Soon)", corner_radius=6).pack(side="left", padx=5)
 
     def refresh(self):
         u = self.app.current_user
-        self.welcome.config(text=f"Welcome, {u['full_name']}")
+        self.welcome.configure(text=f"Welcome, {u['full_name']}")
         
         # Load categories
         categories = ["All"] + self.app.db.get_categories()
-        self.category_combo['values'] = categories
+        self.category_combo.configure(values=categories)
         
         # Load products
         self.filter_products()
@@ -1081,7 +1061,7 @@ class CustomerDashboard(ttk.Frame):
             self.cart_tree.insert("", tk.END, values=(item[0], item[1], f"${item[2]:.2f}", item[3], f"${item[4]:.2f}"))
             total += item[4]
         
-        self.cart_total_label.config(text=f"Cart Total: ${total:.2f}")
+        self.cart_total_label.configure(text=f"Cart Total: ${total:.2f}")
 
     def remove_from_cart(self):
         selected = self.cart_tree.selection()
